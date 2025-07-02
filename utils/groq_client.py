@@ -97,7 +97,7 @@ class GroqClient:
             api_key: Groq API key (if None, will try to get from environment)
             enable_cache: Whether to cache responses for performance
         """
-        self.api_key = "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"
+        self.api_key = os.getenv("GROQ_API_KEY")
         self.enable_cache = enable_cache
         
         # Initialize clients

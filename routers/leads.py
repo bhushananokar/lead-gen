@@ -1210,10 +1210,8 @@ def scrape_real_leads(
 # BACKGROUND TASK FUNCTIONS
 # ============================
 
-# Fix for the AI analysis error - Lead object conversion issue
-
 def _perform_ai_analysis_background(lead_id: int, user_id: int):
-    """Background task for AI analysis - FIXED LEAD OBJECT CONVERSION"""
+    """Background task for AI analysis of a single lead"""
     try:
         from database import SessionLocal
         from utils.ai_analyzer_2 import GroqEnhancedAnalyzer
@@ -1225,220 +1223,58 @@ def _perform_ai_analysis_background(lead_id: int, user_id: int):
         
         lead = db.query(Lead).filter(Lead.id == lead_id).first()
         if not lead:
-            db.close()
             return
         
-        print(f"🔍 Processing lead {lead_id}: {getattr(lead, 'first_name', '')} {getattr(lead, 'last_name', '')}")
-        
-        # FIXED: Properly convert Lead object to dictionary
-        lead_dict = {
-            'id': getattr(lead, 'id', lead_id),
-            'first_name': getattr(lead, 'first_name', '') or '',
-            'last_name': getattr(lead, 'last_name', '') or '',
-            'email': getattr(lead, 'email', '') or '',
-            'phone': getattr(lead, 'phone', '') or '',
-            'title': getattr(lead, 'title', '') or '',
-            'company_name': getattr(lead, 'company_name', '') or getattr(lead, 'company', '') or '',
-            'company_industry': getattr(lead, 'company_industry', '') or getattr(lead, 'industry', '') or '',
-            'company_website': getattr(lead, 'company_website', '') or getattr(lead, 'website', '') or '',
-            'company_size': getattr(lead, 'company_size', '') or '',
-            'company_location': getattr(lead, 'company_location', '') or '',
-            'source': getattr(lead, 'source', '') or '',
-            'priority': getattr(lead, 'priority', '') or '',
-            'quality': getattr(lead, 'quality', '') or '',
-            'score': getattr(lead, 'score', 0) or 0,
-            'tags': getattr(lead, 'tags', '') or '',
-            'notes': getattr(lead, 'notes', '') or '',
-            'created_at': getattr(lead, 'created_at', None),
-            'updated_at': getattr(lead, 'updated_at', None)
-        }
-        
-        # AI analysis with the safely converted dictionary
-        print(f"🤖 Starting AI analysis for lead {lead_id}")
-        insights = analyzer.analyze_lead(lead_dict)
-        priority_score = insights.get('priority_score', 50)
-        print(f"✅ AI analysis completed for lead {lead_id}, score: {priority_score}")
-        
-        # Priority level calculation
-        if priority_score >= 85:
-            priority_level = "critical"
-        elif priority_score >= 70:
-            priority_level = "high"  
-        elif priority_score >= 50:
-            priority_level = "medium"
-        else:
-            priority_level = "low"
+        # AI analysis
+        insights = analyzer.analyze_lead(lead)
         
         # Store AI prediction
         prediction = LeadPrediction(
             lead_id=lead_id,
             model_type="priority",
-            model_version="2.0.0",
-            prediction_score=priority_score,
-            confidence=insights.get('confidence', 0.8),
-            explanation=insights.get('reason', 'Enhanced AI analysis'),
+            model_version="1.0.0",
+            prediction_score=insights.get('priority_score', 50),
+            confidence=insights.get('confidence', 0.5),
+            explanation=insights.get('reason', 'Background AI analysis'),
             processing_time_ms=100.0
         )
         db.add(prediction)
         
-        # FIXED: Quality assessment with proper error handling
-        try:
-            quality_result = quality_engine.assess_lead_quality(lead_dict)
-            
-            # Handle both dictionary and object responses
-            if hasattr(quality_result, '__dict__'):
-                # It's an object - convert to dict
-                quality_report = {
-                    'overall_score': getattr(quality_result, 'overall_score', 75),
-                    'email_quality': getattr(quality_result, 'email_quality', 80),
-                    'completeness_score': getattr(quality_result, 'completeness_score', 70),
-                    'accuracy_score': getattr(quality_result, 'accuracy_score', 85),
-                    'issues': getattr(quality_result, 'issues', []),
-                    'suggestions': getattr(quality_result, 'suggestions', [])
-                }
-            elif isinstance(quality_result, dict):
-                # It's already a dictionary
-                quality_report = quality_result
-            else:
-                # Fallback for unknown type
-                quality_report = {
-                    'overall_score': 75,
-                    'email_quality': 80,
-                    'completeness_score': 70,
-                    'accuracy_score': 85,
-                    'issues': [],
-                    'suggestions': []
-                }
-            
-            quality_score = DataQualityScore(
-                lead_id=lead_id,
-                overall_score=quality_report.get('overall_score', 75),
-                email_quality=quality_report.get('email_quality', 80),
-                completeness_score=quality_report.get('completeness_score', 70),
-                accuracy_score=quality_report.get('accuracy_score', 85),
-                issues_found=json.dumps(quality_report.get('issues', [])),
-                suggestions=json.dumps(quality_report.get('suggestions', [])),
-                assessment_method="enhanced_analysis"
-            )
-            db.add(quality_score)
-            
-        except Exception as e:
-            print(f"⚠️ Quality assessment failed for lead {lead_id}: {e}")
-            # Continue without quality assessment
+        # Quality assessment
+        quality_report = quality_engine.assess_lead_quality(lead)
         
-        # Create insight with meaningful description
-        insight_text = f"Lead analysis completed for {lead_dict.get('first_name', '')} {lead_dict.get('last_name', '')} with {priority_level} priority (score: {priority_score})"
+        quality_score = DataQualityScore(
+            lead_id=lead_id,
+            overall_score=quality_report.get('overall_score', 50),
+            email_quality=quality_report.get('email_quality', 0),
+            completeness_score=quality_report.get('completeness_score', 0),
+            accuracy_score=quality_report.get('accuracy_score', 0),
+            issues_found=json.dumps(quality_report.get('issues', [])),
+            suggestions=json.dumps(quality_report.get('suggestions', [])),
+            assessment_method="background_analysis"
+        )
+        db.add(quality_score)
         
+        # Create insight record
         insight = LeadInsight(
             lead_id=lead_id,
             insight_type="priority",
-            insight_text=insight_text,
-            action_items=json.dumps([
-                f"Priority: {priority_level}",
-                f"Score: {priority_score}",
-                "Review lead details",
-                "Plan outreach strategy"
-            ]),
-            priority_level=priority_level,
-            confidence_score=insights.get('confidence', 0.8),
-            impact_score=priority_score,
-            urgency_score=insights.get('urgency_score', priority_score * 0.8),
-            generated_by="groq_enhanced_analyzer",
-            status="active"
+            insight_text=insights.get('reason', 'AI analysis completed'),
+            action_items=json.dumps(insights.get('actions', [])),
+            priority_level=_get_priority_level(insights.get('priority_score', 50)),
+            confidence_score=insights.get('confidence', 0.5),
+            impact_score=insights.get('priority_score', 50),
+            generated_by="background_ai_analyzer"
         )
         db.add(insight)
         
         db.commit()
-        print(f"✅ Enhanced AI analysis completed for lead {lead_id} with priority: {priority_level}")
+        db.close()
+        
+        print(f"✅ Background AI analysis completed for lead {lead_id}")
         
     except Exception as e:
-        print(f"❌ Enhanced AI analysis failed for lead {lead_id}: {e}")
-        import traceback
-        traceback.print_exc()
-    finally:
-        try:
-            db.close()
-        except:
-            pass
-
-
-# Also fix the data quality engine to handle Lead objects properly
-def fixed_assess_lead_quality(self, lead_data):
-    """FIXED: Assess lead quality with proper object handling"""
-    try:
-        # Convert Lead object to dictionary if needed
-        if hasattr(lead_data, '__dict__') and not isinstance(lead_data, dict):
-            # It's a database object, convert to dict
-            data_dict = {
-                'id': getattr(lead_data, 'id', None),
-                'first_name': getattr(lead_data, 'first_name', '') or '',
-                'last_name': getattr(lead_data, 'last_name', '') or '',
-                'email': getattr(lead_data, 'email', '') or '',
-                'phone': getattr(lead_data, 'phone', '') or '',
-                'title': getattr(lead_data, 'title', '') or '',
-                'company_name': getattr(lead_data, 'company_name', '') or '',
-                'company_industry': getattr(lead_data, 'company_industry', '') or '',
-                'company_website': getattr(lead_data, 'company_website', '') or '',
-                'source': getattr(lead_data, 'source', '') or ''
-            }
-        else:
-            # It's already a dictionary
-            data_dict = lead_data
-        
-        # Perform quality assessment on the dictionary
-        overall_score = 0
-        email_quality = 0
-        completeness_score = 0
-        accuracy_score = 0
-        issues = []
-        suggestions = []
-        
-        # Email quality check
-        email = data_dict.get('email', '')
-        if email and '@' in email and '.' in email:
-            email_quality = 85
-        elif email:
-            email_quality = 50
-            issues.append("Email format may be invalid")
-        else:
-            email_quality = 0
-            issues.append("Missing email address")
-            suggestions.append("Add email address")
-        
-        # Completeness check
-        required_fields = ['first_name', 'last_name', 'email', 'company_name']
-        filled_fields = sum(1 for field in required_fields if data_dict.get(field))
-        completeness_score = (filled_fields / len(required_fields)) * 100
-        
-        if completeness_score < 75:
-            missing_fields = [field for field in required_fields if not data_dict.get(field)]
-            suggestions.append(f"Add missing fields: {', '.join(missing_fields)}")
-        
-        # Overall accuracy
-        accuracy_score = 85  # Default good score
-        
-        # Calculate overall score
-        overall_score = (email_quality * 0.3 + completeness_score * 0.4 + accuracy_score * 0.3)
-        
-        return {
-            'overall_score': overall_score,
-            'email_quality': email_quality,
-            'completeness_score': completeness_score,
-            'accuracy_score': accuracy_score,
-            'issues': issues,
-            'suggestions': suggestions
-        }
-        
-    except Exception as e:
-        print(f"Quality assessment error: {e}")
-        return {
-            'overall_score': 50,
-            'email_quality': 50,
-            'completeness_score': 50,
-            'accuracy_score': 50,
-            'issues': ['Assessment failed'],
-            'suggestions': ['Manual review needed']
-        }
+        print(f"❌ Background AI analysis failed for lead {lead_id}: {e}")
 
 def _batch_ai_analysis_background(lead_ids: List[int], user_id: int):
     """Background task for batch AI analysis"""
