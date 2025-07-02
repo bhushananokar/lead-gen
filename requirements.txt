@@ -1,0 +1,204 @@
+# requirements.txt - Enhanced with AI/ML Dependencies
+
+# ============================
+# EXISTING CORE DEPENDENCIES (UNCHANGED)
+# ============================
+
+# Web Framework
+fastapi==0.104.1
+uvicorn==0.24.0
+
+# Database
+sqlalchemy==2.0.23
+alembic==1.12.1
+
+# Data Validation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# HTTP and File Handling
+python-multipart==0.0.6
+httpx==0.25.2
+aiofiles==23.2.1
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Web Scraping
+beautifulsoup4==4.12.2
+selenium==4.15.2
+
+# Configuration
+python-decouple==3.8
+
+# Background Tasks (Optional - Currently Unused)
+redis==5.0.1
+celery==5.3.4
+
+# Database Driver (Optional - Currently Using SQLite)
+psycopg2-binary==2.9.9
+
+# ============================
+# NEW AI/ML DEPENDENCIES
+# ============================
+
+# Core Machine Learning
+scikit-learn==1.3.0
+pandas==2.0.3
+numpy==1.24.3
+joblib==1.3.1
+
+# Data Processing & Analysis
+scipy==1.11.3
+matplotlib==3.7.1
+seaborn==0.12.2
+
+# Text Processing & NLP
+textblob==0.17.1
+nltk==3.8.1
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.21.1
+
+# LLM Integration (Groq)
+groq==0.4.1
+
+# Model Serialization & Persistence
+pickle-mixin==1.0.2
+cloudpickle==2.2.1
+
+# Data Validation & Cleaning
+email-validator==2.1.0
+phonenumbers==8.13.22
+
+# Statistical Analysis
+statsmodels==0.14.0
+
+# Feature Engineering
+category-encoders==2.6.2
+imbalanced-learn==0.11.0
+
+# Model Monitoring & Evaluation
+mlflow==2.7.1
+
+# Data Visualization for AI Insights
+plotly==5.17.0
+
+# Time Series Analysis (for trend analysis)
+prophet==1.1.4
+
+# Clustering & Similarity
+faiss-cpu==1.7.4
+
+# Text Similarity & Embeddings
+sentence-transformers==2.2.2
+
+# Data Export Enhancement
+xlsxwriter==3.1.9
+openpyxl==3.1.2
+
+# Logging & Monitoring
+structlog==23.2.0
+
+# Performance & Optimization
+memory-profiler==0.61.0
+line-profiler==4.1.1
+
+# Development & Testing (Optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# Jupyter Notebook Support (Optional for model development)
+jupyter==1.0.0
+ipykernel==6.25.2
+
+# ============================
+# OPTIONAL AI ENHANCEMENTS
+# ============================
+
+# Computer Vision (for logo/website analysis)
+opencv-python==4.8.1.78
+pillow==10.0.1
+
+# Advanced NLP (if needed)
+spacy==3.7.2
+
+# Deep Learning (lightweight, CPU-only)
+torch==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.16.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+
+# Time Zone Handling
+pytz==2023.3.post1
+
+# URL Processing
+tldextract==5.0.1
+
+# Email Pattern Analysis
+email-reply-parser==0.5.12
+
+# Social Media API Integration (Optional)
+tweepy==4.14.0
+linkedin-api==2.0.0
+
+# ============================
+# SYSTEM DEPENDENCIES NOTES
+# ============================
+
+# For spaCy language models (run after pip install):
+# python -m spacy download en_core_web_sm
+
+# For NLTK data (run after pip install):
+# python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
+
+# For TextBlob corpora (run after pip install):
+# python -c "import textblob; textblob.download_corpora()"
+
+# ============================
+# VERSION COMPATIBILITY NOTES
+# ============================
+
+# Python 3.8+ required for all dependencies
+# SQLAlchemy 2.0+ for enhanced async support
+# FastAPI 0.104+ for latest Pydantic v2 compatibility
+# Pandas 2.0+ for improved performance
+# Scikit-learn 1.3+ for latest ML algorithms
+
+# ============================
+# DOCKER/PRODUCTION CONSIDERATIONS
+# ============================
+
+# For production deployment, consider:
+# gunicorn==21.2.0
+# uvloop==0.19.0  # For better async performance on Unix
+# redis==5.0.1    # If using background tasks
+
+# For monitoring in production:
+# prometheus-client==0.18.0
+# sentry-sdk[fastapi]==1.38.0
+
+# ============================
+# LIGHTWEIGHT ALTERNATIVES
+# ============================
+
+# If memory/space is constrained, consider these lighter alternatives:
+# scikit-learn-intelex==2023.2.1  # Intel optimization
+# pandas-profiling==3.6.6         # Instead of full pandas for basic analysis
+# fasttext==0.9.2                 # Lighter than sentence-transformers
+
+# ============================
+# INSTALLATION COMMANDS
+# ============================
+
+# Standard installation:
+# pip install -r requirements.txt
+
+# Development installation with testing:
+# pip install -r requirements.txt pytest pytest-asyncio pytest-cov
+
+# Minimal AI installation (core ML only):
+# pip install scikit-learn pandas numpy joblib textblob fuzzywuzzy groq
+
+# GPU acceleration (if NVIDIA GPU available):
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+# pip install faiss-gpu  # Instead of faiss-cpu
